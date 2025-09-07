@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Event Attendance</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .container { max-width: 1500px; margin: auto; }
+        h2 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10px; }
+        th, td { border: 1px solid #ddd; padding: 5px; text-align: center; }
+        th { background-color: #f4f4f4; }
+        td:first-child { text-align: left; font-weight: bold; width: 15%; }
+        .event-cell { width: 3.5%; }
+        .update-btn { display: block; width: 150px; margin: 20px auto; padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Weekly Event Attendance Tracker</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2">Student Name</th>
+                <th colspan="3">07-09-2025</th>
+                <th colspan="3">08-09-2025</th>
+                <th colspan="3">09-09-2025</th>
+                <th colspan="3">10-09-2025</th>
+                <th colspan="3">11-09-2025</th>
+                <th colspan="3">12-09-2025</th>
+                <th colspan="3">13-09-2025</th>
+                <th rowspan="2">Total Count</th>
+            </tr>
+            <tr>
+                <th>E1</th><th>E2</th><th>E3</th>
+                <th>E1</th><th>E2</th><th>E3</th>
+                <th>E1</th><th>E2</th><th>E3</th>
+                <th>E1</th><th>E2</th><th>E3</th>
+                <th>E1</th><th>E2</th><th>E3</th>
+                <th>E1</th><th>E2</th><th>E3</th>
+                <th>E1</th><th>E2</th><th>E3</th>
+            </tr>
+        </thead>
+        <tbody id="attendance-body"></tbody>
+    </table>
+
+    <button class="update-btn" id="update-btn">Update</button>
+</div>
+
+<script>
+    const students = [
+        "Student A", "Student B", "Student C", "Student D", "Student E", 
+        "Student F", "Student G", "Student H", "Student I", "Student J",
+        "Student K", "Student L", "Student M", "Student N", "Student O",
+        "Student P", "Student Q", "Student R", "Student S", "Student T"
+    ];
+
+    const dates = [
+        "07-09-2025", "08-09-2025", "09-09-2025", "10-09-2025", 
+        "11-09-2025", "12-09-2025", "13-09-2025"
+    ];
+
+    const events = ["E1", "E2", "E3"];
+    const attendanceBody = document.getElementById("attendance-body");
+    const updateBtn = document.getElementById("update-btn");
+
+    // ✅ Load data from localStorage but ensure names are always present
+    function loadData() {
+        let storedData = localStorage.getItem("weeklyAttendance");
+        let saved = storedData ? JSON.parse(storedData) : [];
+
+        // Build default structure
+        const initialData = students.map(name => {
+            const student = { name, attendance: {} };
+            dates.forEach(date => {
+                events.forEach(event => {
+                    student.attendance[`${date}_${event}`] = false;
+                });
+            });
+            return student;
+        });
+
+        // Merge saved status (if any)
+        initialData.forEach(student => {
+            const savedStudent = saved.find(s => s.name === student.name);
+            if (savedStudent) {
+                Object.assign(student.attendance, savedStudent.attendance);
+            }
+        });
+
+        return initialData;
+    }
+
+    function renderTable(data) {
+        attendanceBody.innerHTML = "";
+        data.forEach((student, studentIndex) => {
+            const row = document.createElement("tr");
+            
+            // Student Name Cell
+            const nameCell = document.createElement("td");
+            nameCell.textContent = student.name;
+            row.appendChild(nameCell);
+            
+            // Event Checkboxes
+            dates.forEach(date => {
+                events.forEach(event => {
+                    const cell = document.createElement("td");
+                    cell.className = "event-cell";
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    const eventKey = `${date}_${event}`;
+                    checkbox.checked = student.attendance[eventKey];
+                    checkbox.dataset.studentIndex = studentIndex;
+                    checkbox.dataset.eventKey = eventKey;
+                    cell.appendChild(checkbox);
+                    row.appendChild(cell);
+                });
+            });
+            
+            // Total Count Cell
+            const totalCountCell = document.createElement("td");
+            row.appendChild(totalCountCell);
+
+            attendanceBody.appendChild(row);
+        });
+        updateTotals();
+    }
+    
+    function updateTotals() {
+        document.querySelectorAll("#attendance-body tr").forEach(row => {
+            let totalCount = 0;
+            const checkboxes = row.querySelectorAll("input[type=checkbox]");
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    totalCount++;
+                }
+            });
+            row.querySelector("td:last-child").textContent = totalCount;
+        });
+    }
+
+    function saveData() {
+        const newData = [];
+        document.querySelectorAll("#attendance-body tr").forEach((row) => {
+            const studentName = row.querySelector("td:first-child").textContent; 
+            const newStudentData = { name: studentName, attendance: {} };
+            
+            row.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                const eventKey = checkbox.dataset.eventKey;
+                newStudentData.attendance[eventKey] = checkbox.checked;
+            });
+
+            newData.push(newStudentData);
+        });
+
+        localStorage.setItem("weeklyAttendance", JSON.stringify(newData));
+        alert("Data has been updated and saved!");
+    }
+
+    renderTable(loadData());
+
+    updateBtn.addEventListener("click", saveData);
+    attendanceBody.addEventListener("change", (event) => {
+        if (event.target.type === "checkbox") {
+            updateTotals();
+        }
+    });
+</script>
+
+</body>
+</html>
